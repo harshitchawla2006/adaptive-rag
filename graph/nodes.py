@@ -5,6 +5,9 @@ from retrieval.grader import grade_documents
 from retrieval.web_search import web_search
 from langchain_core.prompts import ChatPromptTemplate
 from core.cache import check_cache, store_in_cache
+from evaluation.ragas_eval import evaluate_response
+from guardrails.input_guard import check_input
+from guardrails.output_guard import check_output
 from loguru import logger
 
 prompt = ChatPromptTemplate.from_messages([
@@ -91,5 +94,54 @@ def cache_write_node(state: GraphState) -> GraphState:
     store_in_cache(query, answer, eval_scores)
 
     return {**state}
-  
 
+
+def evaluate_node(state: GraphState) -> GraphState:
+    """Node — Evaluate the generated answer using RAGAS."""
+    logger.info("--- NODE: EVALUATE ---")
+    
+    query = state["query"]
+    answer = state["answer"]
+    docs = state["retrieved_docs"]
+
+    # Skip evaluation if no docs (cache hit)
+    if not docs:
+        logger.info("Cache hit — skipping evaluation")
+        return {**state}
+
+    scores = evaluate_response(query, answer, docs)
+
+    return {**state, "eval_scores": scores}
+  
+def input_guard_node(state: GraphState) -> GraphState:
+    """Node — Check input safety before running pipeline."""
+    logger.info("--- NODE: INPUT GUARD ---")
+    query = state["query"]
+
+    is_safe, reason = check_input(query)
+
+    if not is_safe:
+        return {
+            **state,
+            "answer": f"I can't help with that. {reason}",
+            "grade": "blocked"
+        }
+
+    return {**state}
+
+
+def output_guard_node(state: GraphState) -> GraphState:
+    """Node — Check output safety before returning answer."""
+    logger.info("--- NODE: OUTPUT GUARD ---")
+    query = state["query"]
+    answer = state["answer"]
+
+    is_safe, reason = check_output(query, answer)
+
+    if not is_safe:
+        return {
+            **state,
+            "answer": f"I was unable to generate a safe response. {reason}"
+        }
+
+    return {**state}

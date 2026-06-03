@@ -6,7 +6,10 @@ from graph.nodes import (
     web_search_node,
     generate_node,
     cache_check_node,
-    cache_write_node
+    cache_write_node,
+    evaluate_node,
+    input_guard_node,
+    output_guard_node
 )
 from graph.edges import (
     route_after_grading,
@@ -15,6 +18,14 @@ from graph.edges import (
 from graph.query_enhancer import enhance_query
 from graph.rewriter import rewrite_query
 from loguru import logger
+
+
+def route_after_input_guard(state: GraphState) -> str:
+    """If input blocked, skip to end. Otherwise check cache."""
+    if state.get("grade") == "blocked":
+        logger.warning("Input blocked → ending pipeline")
+        return "end"
+    return "cache_check"
 
 
 def route_after_cache(state: GraphState) -> str:
@@ -36,7 +47,7 @@ def build_workflow():
     """Build and compile the LangGraph workflow."""
 
     workflow = StateGraph(GraphState)
-
+    workflow.add_node("input_guard", input_guard_node)
     workflow.add_node("cache_check", cache_check_node)
     workflow.add_node("enhance_query", enhance_query)
     workflow.add_node("retrieve", retrieve_node)
@@ -44,8 +55,20 @@ def build_workflow():
     workflow.add_node("web_search", web_search_node)
     workflow.add_node("rewrite", rewrite_query)
     workflow.add_node("generate", generate_node)
+    workflow.add_node("evaluate", evaluate_node)
+    workflow.add_node("output_guard", output_guard_node)
     workflow.add_node("cache_write", cache_write_node)
-    workflow.set_entry_point("cache_check")
+
+    workflow.set_entry_point("input_guard")
+
+    workflow.add_conditional_edges(
+        "input_guard",
+        route_after_input_guard,
+        {
+            "end": END,
+            "cache_check": "cache_check"
+        }
+    )
     workflow.add_conditional_edges(
         "cache_check",
         route_after_cache,
@@ -84,7 +107,9 @@ def build_workflow():
         }
     )
 
-    workflow.add_edge("generate", "cache_write")
+    workflow.add_edge("generate", "evaluate")
+    workflow.add_edge("evaluate", "output_guard")
+    workflow.add_edge("output_guard", "cache_write")
     workflow.add_edge("cache_write", END)
 
     app = workflow.compile()

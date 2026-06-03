@@ -22,7 +22,8 @@ def run_agent(query: str):
     print(f"QUERY: {query}")
     print("="*60)
     print(f"GRADE: {final_state['grade']}")
-    print(f"DOCS USED: {len(final_state['retrieved_docs'])}")
+    docs = final_state.get('retrieved_docs')
+    print(f"DOCS USED: {len(docs) if docs is not None else 0}")
     print(f"\nANSWER:\n{final_state['answer']}")
     print("="*60)
 
