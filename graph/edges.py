@@ -19,9 +19,15 @@ def route_after_grading(state:GraphState)->str:
 
 def route_after_web_search(state: GraphState) -> str:
     """
-    After web search, always go to generate.
-    Web search is our last resort — we generate with whatever we got.
+    After web search, grade the results.
+    If rewrite_count is maxed out, go straight to generate.
     """
-    logger.info("--- EDGE: AFTER WEB SEARCH → generate ---")
-    return "generate"
+    rewrite_count = state["rewrite_count"]
+
+    if rewrite_count >= 2:
+        logger.warning("Max rewrites reached → generating with what we have")
+        return "generate"
+    else:
+        logger.info("Web search done → rewriting query for retry")
+        return "rewrite"
 

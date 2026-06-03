@@ -4,6 +4,7 @@ from retrieval.hybrid import hybrid_search
 from retrieval.grader import grade_documents
 from retrieval.web_search import web_search
 from langchain_core.prompts import ChatPromptTemplate
+from core.cache import check_cache, store_in_cache
 from loguru import logger
 
 prompt = ChatPromptTemplate.from_messages([
@@ -65,6 +66,30 @@ def generate_node(state: GraphState) -> GraphState:
     return {**state, "answer": answer}
 
 
+def cache_check_node(state: GraphState) -> GraphState:
+    """Node 0 — Check cache before running full pipeline."""
+    logger.info("--- NODE: CACHE CHECK ---")
+    query = state["query"]
 
+    cached_answer = check_cache(query)
+
+    if cached_answer:
+        logger.success("Cache HIT — skipping full pipeline")
+        return {**state, "answer": cached_answer, "grade": "cached"}
+    
+    logger.info("Cache MISS — running full pipeline")
+    return {**state}
+
+
+def cache_write_node(state: GraphState) -> GraphState:
+    """Node 5 — Store answer in cache after generation."""
+    logger.info("--- NODE: CACHE WRITE ---")
+    query = state["query"]
+    answer = state["answer"]
+    eval_scores = state.get("eval_scores", None)
+
+    store_in_cache(query, answer, eval_scores)
+
+    return {**state}
   
 
