@@ -2,7 +2,7 @@ from ragas import evaluate
 from ragas.metrics import faithfulness, answer_relevancy, context_recall
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
-from langchain_ollama import OllamaEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_core.documents import Document
 from datasets import Dataset
 from core.llm import fast_llm
@@ -10,7 +10,7 @@ from loguru import logger
 
 ragas_llm = LangchainLLMWrapper(fast_llm)
 ragas_embeddings = LangchainEmbeddingsWrapper(
-    OllamaEmbeddings(model="nomic-embed-text")
+    FastEmbedEmbeddings(model_name="nomic-ai/nomic-embed-text-v1.5")
 )
 
 def get_score(results, key):

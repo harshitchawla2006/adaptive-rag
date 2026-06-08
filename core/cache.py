@@ -1,11 +1,11 @@
-from langchain_ollama import OllamaEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from loguru import logger
 from datetime import datetime
 import json
 import os
 import numpy as np
 
-embeddings=OllamaEmbeddings(model="nomic-embed-text")
+embeddings = FastEmbedEmbeddings(model_name="nomic-ai/nomic-embed-text-v1.5")
 
 CACHE_FILE="./cache.json"
 
