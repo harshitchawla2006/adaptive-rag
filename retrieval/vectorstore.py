@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.documents import Document
 from loguru import logger
@@ -11,7 +11,9 @@ import os
 load_dotenv()
 
 # Embeddings — runs on CPU, no API key needed
-embeddings = FastEmbedEmbeddings(model_name="nomic-ai/nomic-embed-text-v1.5")
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
 # Qdrant client — cloud if env vars set, local disk otherwise
 if os.getenv("QDRANT_URL"):
@@ -25,7 +27,7 @@ else:
     client = QdrantClient(path="./qdrant_storage")
 
 COLLECTION_NAME = "research_docs"
-VECTOR_SIZE = 768
+VECTOR_SIZE = 384
 
 
 def get_or_create_collection():

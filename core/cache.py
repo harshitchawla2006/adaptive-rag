@@ -1,11 +1,13 @@
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from loguru import logger
 from datetime import datetime
 import json
 import os
 import numpy as np
 
-embeddings = FastEmbedEmbeddings(model_name="nomic-ai/nomic-embed-text-v1.5")
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
 CACHE_FILE="./cache.json"
 

@@ -19,3 +19,5 @@ tiktoken
 loguru
 datasets==2.14.0
 numpy==1.26.4
+langchain-huggingface
+sentence-transformers
